@@ -1,0 +1,25 @@
+# ============================================
+# VoucherVault Wrangler Configuration
+# ============================================
+name = "voucher-vault-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "voucher-vault-db"
+database_id = "YOUR_DATABASE_ID_HERE"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "VOUCHER_IMAGES"
+bucket_name = "voucher-images"
+
+# Environment Variables
+[vars]
+R2_PUBLIC_URL = "https://images.yourdomain.com"
+R2_BUCKET_NAME = "voucher-images"
+
+# Secrets (set via wrangler secret put)
+# - Add a secret salt for password hashing
