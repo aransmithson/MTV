@@ -12,14 +12,16 @@ database_name = "voucher-vault-db"
 database_id = "YOUR_DATABASE_ID_HERE"
 
 # R2 Bucket Binding
+# The bucket does NOT need a public domain — images are served
+# through the worker at /api/image/:key with auth enforcement.
 [[r2_buckets]]
 binding = "VOUCHER_IMAGES"
 bucket_name = "voucher-images"
 
-# Environment Variables
-[vars]
-R2_PUBLIC_URL = "https://images.yourdomain.com"
-R2_BUCKET_NAME = "voucher-images"
-
-# Secrets (set via wrangler secret put)
-# - Add a secret salt for password hashing
+# Secrets — set via wrangler CLI, never commit these:
+#   wrangler secret put SECRET_KEY    ← used in generateToken()
+#   wrangler secret put PASSWORD_SALT ← used in hashPassword()
+#
+# After deploying, update YOUR_SECRET_KEY and YOUR_SALT in worker.js
+# to read from env.SECRET_KEY and env.PASSWORD_SALT if you prefer
+# environment-driven secrets over hardcoded strings.
