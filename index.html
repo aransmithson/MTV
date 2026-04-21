@@ -466,13 +466,18 @@
     ════════════════════════════════════════════════════════════ -->
     <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
         onclick="closeImageModal()">
-        <div class="relative max-w-4xl w-full modal-enter" onclick="event.stopPropagation()">
+        <div class="relative modal-enter flex flex-col items-center w-full" style="max-width: min(92vw, 640px);" onclick="event.stopPropagation()">
+            <!-- Close button -->
             <button onclick="closeImageModal()"
                 class="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
                 <i class="fas fa-times text-white"></i>
             </button>
-            <img id="fullImage" src="" alt="Voucher" class="w-full rounded-2xl shadow-2xl">
-            <div class="absolute bottom-4 left-4 right-4 glass-panel rounded-xl p-4">
+            <!-- Image: fluid width, capped height so it never overflows on mobile or desktop -->
+            <img id="fullImage" src="" alt="Voucher"
+                style="width: 100%; height: auto; max-height: 70vh; object-fit: contain;"
+                class="rounded-2xl shadow-2xl">
+            <!-- Info bar -->
+            <div class="glass-panel rounded-xl p-4 mt-3 w-full">
                 <h3 id="imageModalTitle" class="font-bold text-white text-lg"></h3>
                 <p id="imageModalDetails" class="text-slate-300 text-sm mt-1"></p>
             </div>
