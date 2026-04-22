@@ -116,10 +116,70 @@
             outline: none;
         }
 
+        /* Styled select matching floating-input */
+        .floating-select {
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s;
+            color: #e2e8f0;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+            cursor: pointer;
+        }
+        .floating-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+        .floating-select option {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
         .tab-active {
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Chip-style filter buttons for retailer/value */
+        .chip-filter {
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            color: #94a3b8;
+            background: rgba(99, 102, 241, 0.06);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .chip-filter:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            color: #c7d2fe;
+        }
+        .chip-filter.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+
+        /* Nike chip accent */
+        .chip-nike.active {
+            background: linear-gradient(135deg, #111827, #374151);
+            border-color: #f9fafb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        /* Adidas chip accent */
+        .chip-adidas.active {
+            background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.4);
         }
 
         .image-preview {
@@ -258,6 +318,14 @@
             justify-content: space-between;
             gap: 0.75rem;
         }
+
+        /* Filter bar divider */
+        .filter-divider {
+            width: 1px;
+            height: 1.5rem;
+            background: rgba(255,255,255,0.1);
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -379,15 +447,45 @@
             </div>
         </header>
 
-        <!-- Filters -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-6">
-            <div class="flex bg-slate-800/50 rounded-xl p-1 w-fit">
+        <!-- ── Filter Bar ────────────────────────────────────────────── -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
+            <!-- Row 1: Status tabs -->
+            <div class="flex bg-slate-800/50 rounded-xl p-1 w-fit mb-4">
                 <button onclick="setFilter('unspent')" id="filterUnspent" class="filter-btn px-6 py-2.5 rounded-lg text-sm font-medium transition-all tab-active">
                     <i class="fas fa-wallet mr-2"></i>Unspent
                 </button>
                 <button onclick="setFilter('spent')" id="filterSpent" class="filter-btn px-6 py-2.5 rounded-lg text-sm font-medium text-slate-400 transition-all hover:text-white">
                     <i class="fas fa-history mr-2"></i>Spent Timeline
                 </button>
+            </div>
+
+            <!-- Row 2: Retailer + Value chips -->
+            <div class="flex flex-wrap items-center gap-3 pb-4">
+                <!-- Retailer chips -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Brand</span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="setRetailerFilter('all')"  id="rfAll"    class="chip-filter active">All</button>
+                        <button onclick="setRetailerFilter('Nike')" id="rfNike"   class="chip-filter chip-nike">
+                            <i class="fab fa-nike mr-1 opacity-70"></i>Nike
+                        </button>
+                        <button onclick="setRetailerFilter('Adidas')" id="rfAdidas" class="chip-filter chip-adidas">Adidas</button>
+                    </div>
+                </div>
+
+                <div class="filter-divider hidden sm:block"></div>
+
+                <!-- Value chips -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Value</span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="setValueFilter('all')" id="vfAll"  class="chip-filter active">All</button>
+                        <button onclick="setValueFilter('500')" id="vf500"  class="chip-filter">£500</button>
+                        <button onclick="setValueFilter('400')" id="vf400"  class="chip-filter">£400</button>
+                        <button onclick="setValueFilter('100')" id="vf100"  class="chip-filter">£100</button>
+                        <button onclick="setValueFilter('25')"  id="vf25"   class="chip-filter">£25</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -417,30 +515,38 @@
                 </button>
             </div>
             <form id="addVoucherForm" onsubmit="handleAddVoucher(event)" class="p-6 space-y-5">
+
+                <!-- Retailer dropdown -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Retailer / Store</label>
-                    <input type="text" id="voucherRetailer" required
-                        class="floating-input w-full px-4 py-3 rounded-xl text-white placeholder-slate-500"
-                        placeholder="e.g. Amazon, Tesco">
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Retailer</label>
+                    <select id="voucherRetailer" required
+                        class="floating-select w-full px-4 py-3 rounded-xl">
+                        <option value="" disabled selected>Select retailer…</option>
+                        <option value="Nike">Nike</option>
+                        <option value="Adidas">Adidas</option>
+                    </select>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Value (£)</label>
-                        <input type="number" id="voucherValue" required step="0.01" min="0.01"
-                            class="floating-input w-full px-4 py-3 rounded-xl text-white placeholder-slate-500"
-                            placeholder="25.00">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-1.5">Voucher Code</label>
-                        <input type="text" id="voucherCode"
-                            class="floating-input w-full px-4 py-3 rounded-xl text-white placeholder-slate-500"
-                            placeholder="Optional">
-                    </div>
+
+                <!-- Value dropdown -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Value (£)</label>
+                    <select id="voucherValue" required
+                        class="floating-select w-full px-4 py-3 rounded-xl">
+                        <option value="" disabled selected>Select value…</option>
+                        <option value="500">£500</option>
+                        <option value="400">£400</option>
+                        <option value="100">£100</option>
+                        <option value="25">£25</option>
+                    </select>
                 </div>
+
+                <!-- Expiry -->
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1.5">Expiry Date</label>
                     <input type="date" id="voucherExpiry" class="floating-input w-full px-4 py-3 rounded-xl text-white">
                 </div>
+
+                <!-- Image upload -->
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1.5">Voucher Image</label>
                     <div class="image-preview rounded-xl p-6 text-center cursor-pointer"
@@ -454,12 +560,7 @@
                         <img id="imagePreview" class="hidden max-h-48 mx-auto rounded-lg shadow-lg" alt="Preview">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-1.5">Notes</label>
-                    <textarea id="voucherNotes" rows="3"
-                        class="floating-input w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 resize-none"
-                        placeholder="Any additional details..."></textarea>
-                </div>
+
                 <button type="submit" id="submitBtn"
                     class="btn-primary w-full py-3.5 rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2">
                     <span>Add Voucher</span>
@@ -474,16 +575,13 @@
     <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
         onclick="closeImageModal()">
         <div class="relative modal-enter flex flex-col items-center w-full" style="max-width: min(92vw, 640px);" onclick="event.stopPropagation()">
-            <!-- Close button -->
             <button onclick="closeImageModal()"
                 class="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
                 <i class="fas fa-times text-white"></i>
             </button>
-            <!-- Image: fluid width, capped height so it never overflows on mobile or desktop -->
             <img id="fullImage" src="" alt="Voucher"
                 style="width: 100%; height: auto; max-height: 70vh; object-fit: contain;"
                 class="rounded-2xl shadow-2xl">
-            <!-- Info bar -->
             <div class="glass-panel rounded-xl p-4 mt-3 w-full">
                 <h3 id="imageModalTitle" class="font-bold text-white text-lg"></h3>
                 <p id="imageModalDetails" class="text-slate-300 text-sm mt-1"></p>
@@ -557,10 +655,12 @@
         const API_BASE_URL = 'https://mtv.orange-queen-5655.workers.dev/api';
 
         // ── State ─────────────────────────────────────────────────────────────
-        let currentUser  = null;
-        let authToken    = null;
-        let currentFilter = 'unspent';
-        let tempImageFile = null;
+        let currentUser           = null;
+        let authToken             = null;
+        let currentFilter         = 'unspent';
+        let currentRetailerFilter = 'all';
+        let currentValueFilter    = 'all';
+        let tempImageFile         = null;
 
         // ── API Helper ────────────────────────────────────────────────────────
         async function apiCall(endpoint, options = {}) {
@@ -745,11 +845,9 @@
         async function handleAddVoucher(e) {
             e.preventDefault();
 
-            const retailer = document.getElementById('voucherRetailer').value.trim();
+            const retailer = document.getElementById('voucherRetailer').value;
             const value    = parseFloat(document.getElementById('voucherValue').value);
-            const code     = document.getElementById('voucherCode').value.trim();
             const expiry   = document.getElementById('voucherExpiry').value;
-            const notes    = document.getElementById('voucherNotes').value.trim();
 
             if (!retailer || !value) {
                 showToast('Please fill in required fields', 'error');
@@ -780,7 +878,7 @@
 
                 await apiCall('/vouchers', {
                     method: 'POST',
-                    body: { retailer, value, code, expiry, notes, image_url: imageKey }
+                    body: { retailer, value, expiry, image_url: imageKey }
                 });
 
                 closeAddModal();
@@ -830,7 +928,7 @@
             document.getElementById('fullImage').src = src;
             document.getElementById('imageModalTitle').textContent   = voucher.retailer;
             document.getElementById('imageModalDetails').textContent =
-                `£${parseFloat(voucher.value).toFixed(2)}${voucher.code ? ' | Code: ' + voucher.code : ''}`;
+                `£${parseFloat(voucher.value).toFixed(2)}`;
             document.getElementById('imageModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -863,18 +961,54 @@
             renderVouchers();
         }
 
+        function setRetailerFilter(value) {
+            currentRetailerFilter = value;
+            // Update chip states
+            ['all', 'Nike', 'Adidas'].forEach(r => {
+                const id = 'rf' + (r === 'all' ? 'All' : r);
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.toggle('active', r === value);
+            });
+            renderVouchers();
+        }
+
+        function setValueFilter(value) {
+            currentValueFilter = value;
+            // Update chip states
+            ['all', '500', '400', '100', '25'].forEach(v => {
+                const id = 'vf' + (v === 'all' ? 'All' : v);
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.toggle('active', v === value);
+            });
+            renderVouchers();
+        }
+
         async function renderVouchers() {
             const unspentView = document.getElementById('unspentView');
             const spentView   = document.getElementById('spentView');
             const emptyState  = document.getElementById('emptyState');
-
-            // Whether the current user can delete vouchers
-            const canDelete = currentUser && currentUser.is_admin;
+            const canDelete   = currentUser && currentUser.is_admin;
 
             try {
-                const vouchers = await apiCall(`/vouchers?status=${currentFilter}`);
+                // Build query string with all active filters
+                const params = new URLSearchParams({ status: currentFilter });
+                if (currentRetailerFilter !== 'all') params.set('retailer', currentRetailerFilter);
+                if (currentValueFilter    !== 'all') params.set('value',    currentValueFilter);
 
-                if (vouchers.length === 0) {
+                const vouchers = await apiCall(`/vouchers?${params.toString()}`);
+
+                // Client-side fallback filter in case the backend ignores new params
+                const filtered = vouchers.filter(v => {
+                    const matchRetailer = currentRetailerFilter === 'all' ||
+                        v.retailer.toLowerCase() === currentRetailerFilter.toLowerCase();
+                    const matchValue = currentValueFilter === 'all' ||
+                        parseFloat(v.value) === parseFloat(currentValueFilter);
+                    return matchRetailer && matchValue;
+                });
+
+                if (filtered.length === 0) {
                     unspentView.innerHTML = '';
                     spentView.innerHTML   = '';
                     emptyState.classList.remove('hidden');
@@ -889,7 +1023,7 @@
                     unspentView.classList.remove('hidden');
                     spentView.classList.add('hidden');
 
-                    unspentView.innerHTML = vouchers.map(v => `
+                    unspentView.innerHTML = filtered.map(v => `
                         <div class="voucher-card rounded-2xl p-5 slide-in cursor-pointer" onclick="viewImageById('${v.id}')">
                             <div class="flex items-start justify-between mb-4">
                                 <div class="flex items-center gap-3">
@@ -912,17 +1046,10 @@
                                 <span class="amount-display text-3xl">£${parseFloat(v.value).toFixed(2)}</span>
                             </div>
 
-                            ${v.code ? `<div class="mb-3 px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
-                                <p class="text-xs text-slate-500 uppercase tracking-wider">Code</p>
-                                <p class="text-sm font-mono text-indigo-300">${escapeHtml(v.code)}</p>
-                            </div>` : ''}
-
-                            ${v.expiry ? `<div class="mb-3 flex items-center gap-2 text-xs ${isExpired(v.expiry) ? 'text-rose-400' : 'text-amber-400'}">
+                            ${v.expiry ? `<div class="mb-4 flex items-center gap-2 text-xs ${isExpired(v.expiry) ? 'text-rose-400' : 'text-amber-400'}">
                                 <i class="fas fa-clock"></i>
                                 <span>Expires: ${formatExpiry(v.expiry)}${isExpired(v.expiry) ? ' (Expired)' : ''}</span>
-                            </div>` : ''}
-
-                            ${v.notes ? `<p class="text-sm text-slate-400 mb-4 line-clamp-2">${escapeHtml(v.notes)}</p>` : '<div class="mb-4"></div>'}
+                            </div>` : '<div class="mb-4"></div>'}
 
                             <div class="flex items-center gap-2">
                                 <button onclick="event.stopPropagation(); toggleVoucherStatus('${v.id}')"
@@ -938,7 +1065,7 @@
                     unspentView.classList.add('hidden');
                     spentView.classList.remove('hidden');
 
-                    const grouped = groupByDate(vouchers);
+                    const grouped = groupByDate(filtered);
                     spentView.innerHTML = Object.entries(grouped).map(([date, items]) => `
                         <div class="timeline-date-header">
                             <span class="text-sm font-semibold text-white">${date}</span>
@@ -971,13 +1098,6 @@
                                         <span class="amount-display spent-amount text-2xl">£${parseFloat(v.value).toFixed(2)}</span>
                                         <span class="text-xs text-slate-500">at ${formatTime(v.spent_at)}</span>
                                     </div>
-
-                                    ${v.code ? `<div class="mb-2 px-3 py-1.5 rounded-lg bg-slate-800/30 border border-slate-700/30 inline-block">
-                                        <span class="text-xs text-slate-500">Code:</span>
-                                        <span class="text-sm font-mono text-slate-400 ml-1 line-through">${escapeHtml(v.code)}</span>
-                                    </div>` : ''}
-
-                                    ${v.notes ? `<p class="text-sm text-slate-500 line-clamp-2">${escapeHtml(v.notes)}</p>` : ''}
 
                                     <div class="mt-4 flex items-center gap-2">
                                         <button onclick="event.stopPropagation(); toggleVoucherStatus('${v.id}')"
