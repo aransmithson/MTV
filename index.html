@@ -137,8 +137,15 @@
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
 
-        .delete-btn { opacity: 0; transition: all 0.3s; }
-        .voucher-card:hover .delete-btn { opacity: 1; }
+        /* Delete button — always visible, subtle by default */
+        .delete-btn {
+            opacity: 0.45;
+            transition: all 0.3s;
+        }
+        .delete-btn:hover,
+        .voucher-card:hover .delete-btn {
+            opacity: 1;
+        }
 
         .empty-state {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.5));
@@ -547,9 +554,6 @@
     ════════════════════════════════════════════════════════════ -->
     <script>
         // ── Config ────────────────────────────────────────────────────────────
-        // When deployed to Cloudflare Pages with a Worker on the same zone,
-        // /api proxies to the worker automatically. If running separately,
-        // set this to your worker's full URL.
         const API_BASE_URL = 'https://mtv.orange-queen-5655.workers.dev/api';
 
         // ── State ─────────────────────────────────────────────────────────────
@@ -590,18 +594,14 @@
             return response.json();
         }
 
-        // Constructs an authenticated URL for an R2 image key.
-        // Uses ?token= so it works directly in <img src="...">.
         function getImageUrl(key) {
             if (!key) return null;
-            // Legacy: if a full URL was somehow stored, use it as-is
             if (key.startsWith('http')) return key;
             return `${API_BASE_URL}/image/${key}?token=${encodeURIComponent(authToken)}`;
         }
 
         // ── Initialisation ────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
-            // Restore session
             const savedToken = sessionStorage.getItem('vv_token');
             const savedUser  = sessionStorage.getItem('vv_user');
 
@@ -612,7 +612,6 @@
                 return;
             }
 
-            // Check whether first-time setup is needed
             try {
                 const { needsSetup } = await fetch(`${API_BASE_URL}/auth/setup`).then(r => r.json());
                 if (needsSetup) {
@@ -696,7 +695,6 @@
             document.getElementById('userInitials').textContent    = currentUser.username.charAt(0).toUpperCase();
             document.getElementById('dropdownUsername').textContent = currentUser.username;
 
-            // Show admin-only UI elements
             if (currentUser.is_admin) {
                 document.getElementById('adminBadge').classList.remove('hidden');
                 document.getElementById('manageUsersBtn').classList.remove('hidden');
@@ -777,7 +775,7 @@
 
                     if (!uploadRes.ok) throw new Error('Image upload failed');
                     const uploadData = await uploadRes.json();
-                    imageKey = uploadData.key; // R2 key, not a public URL
+                    imageKey = uploadData.key;
                 }
 
                 await apiCall('/vouchers', {
@@ -870,6 +868,9 @@
             const spentView   = document.getElementById('spentView');
             const emptyState  = document.getElementById('emptyState');
 
+            // Whether the current user can delete vouchers
+            const canDelete = currentUser && currentUser.is_admin;
+
             try {
                 const vouchers = await apiCall(`/vouchers?status=${currentFilter}`);
 
@@ -888,9 +889,7 @@
                     unspentView.classList.remove('hidden');
                     spentView.classList.add('hidden');
 
-                    unspentView.innerHTML = vouchers.map(v => {
-                        const hasImage = !!(v.image_url || v.image);
-                        return `
+                    unspentView.innerHTML = vouchers.map(v => `
                         <div class="voucher-card rounded-2xl p-5 slide-in cursor-pointer" onclick="viewImageById('${v.id}')">
                             <div class="flex items-start justify-between mb-4">
                                 <div class="flex items-center gap-3">
@@ -902,10 +901,11 @@
                                         <p class="text-xs text-slate-400 mt-0.5">Added ${formatDate(v.created_at)}</p>
                                     </div>
                                 </div>
+                                ${canDelete ? `
                                 <button onclick="event.stopPropagation(); deleteVoucher('${v.id}')"
                                     class="delete-btn w-8 h-8 rounded-lg bg-rose-500/20 hover:bg-rose-500 flex items-center justify-center text-rose-400 hover:text-white transition-all">
                                     <i class="fas fa-trash-alt text-xs"></i>
-                                </button>
+                                </button>` : '<div class="w-8"></div>'}
                             </div>
 
                             <div class="mb-4">
@@ -929,13 +929,9 @@
                                     class="status-badge flex-1 py-2.5 rounded-xl font-medium text-sm transition-all bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white">
                                     <i class="fas fa-check mr-2"></i>Mark as Spent
                                 </button>
-                                ${hasImage ? `<button onclick="event.stopPropagation(); viewImageById('${v.id}')"
-                                    class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-indigo-500 flex items-center justify-center text-slate-400 hover:text-white transition-all">
-                                    <i class="fas fa-image"></i>
-                                </button>` : ''}
                             </div>
-                        </div>`;
-                    }).join('');
+                        </div>`
+                    ).join('');
 
                 } else {
                     // Spent — timeline view
@@ -948,9 +944,7 @@
                             <span class="text-sm font-semibold text-white">${date}</span>
                             <span class="text-xs text-slate-400 ml-2">${items.length} voucher${items.length !== 1 ? 's' : ''}</span>
                         </div>
-                        ${items.map(v => {
-                            const hasImage = !!(v.image_url || v.image);
-                            return `
+                        ${items.map(v => `
                             <div class="timeline-item">
                                 <div class="voucher-card spent rounded-2xl p-5 cursor-pointer" onclick="viewImageById('${v.id}')">
                                     <div class="flex items-start justify-between mb-3">
@@ -966,10 +960,11 @@
                                                 </span>
                                             </div>
                                         </div>
+                                        ${canDelete ? `
                                         <button onclick="event.stopPropagation(); deleteVoucher('${v.id}')"
                                             class="delete-btn w-8 h-8 rounded-lg bg-rose-500/20 hover:bg-rose-500 flex items-center justify-center text-rose-400 hover:text-white transition-all">
                                             <i class="fas fa-trash-alt text-xs"></i>
-                                        </button>
+                                        </button>` : '<div class="w-8"></div>'}
                                     </div>
 
                                     <div class="flex items-center justify-between mb-3">
@@ -989,14 +984,10 @@
                                             class="status-badge flex-1 py-2 rounded-xl font-medium text-sm transition-all bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500 hover:text-white">
                                             <i class="fas fa-undo mr-2"></i>Restore to Unspent
                                         </button>
-                                        ${hasImage ? `<button onclick="event.stopPropagation(); viewImageById('${v.id}')"
-                                            class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-indigo-500 flex items-center justify-center text-slate-400 hover:text-white transition-all">
-                                            <i class="fas fa-image"></i>
-                                        </button>` : ''}
                                     </div>
                                 </div>
-                            </div>`;
-                        }).join('')}
+                            </div>`
+                        ).join('')}
                     `).join('');
                 }
             } catch (err) {
